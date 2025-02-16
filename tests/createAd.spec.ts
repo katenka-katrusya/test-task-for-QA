@@ -74,7 +74,7 @@ test.describe('Создание объявления', () => {
 
   test('Создание объявления с некорректными данными', async ({ page }) => {
     // заполнение формы
-    await fillAdForm(page, 'L'.repeat(300), '-500', '   ', 'abcd');
+    await fillAdForm(page, 'U'.repeat(300), '-500', '   ', 'abcd');
 
     await confirmSave(page);
 
@@ -95,8 +95,8 @@ test.describe('Создание объявления', () => {
     // проверка, что объявление НЕ создано, то есть их 0.
     await page
       .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('LLLLLLLLLLLLLLLLLLLL');
+      .fill('UUUUUUUUUUUUUUUUUU');
     await page.waitForTimeout(3000); // ждём пока прогрузится выдача
-    await expect(page.getByText('LLLLLLLLLLLLLLLLLLLL')).toHaveCount(0);
+    await expect(page.getByText('UUUUUUUUUUUUUUUUUU')).toHaveCount(0);
   });
 });
