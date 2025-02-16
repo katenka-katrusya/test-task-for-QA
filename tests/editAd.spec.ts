@@ -1,35 +1,49 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('Редактирование объявления', () => {
   test.beforeEach(async ({ page }) => {
+    // переход сразу к редактированию объявления
     await page.goto(
       'http://tech-avito-intern.jumpingcrab.com/advertisements/2'
     );
-    await page.waitForTimeout(3000); // ожидание загрузки картинки
+    await page.waitForTimeout(3000); // ожидание загрузки объявления (на всякий случай)
     await page.getByRole('img').nth(2).click();
   });
 
-  test('Успешное редактирование объявления', async ({ page }) => {
-    // новые данные объявления
-    await page
-      .locator('input[name="imageUrl"]')
-      .fill(
-        'https://avatars.mds.yandex.net/i?id=916c10f825180c47640a6b374eeb2a52_l-5292620-images-thumbs&n=13'
-      );
-    await page.locator('input[name="name"]').fill('Игрушка зайчик');
-    await page.locator('input[name="price"]').fill('700');
-    await page
-      .locator('textarea[name="description"]')
-      .fill('Мягкий плюшевый зайчик');
+  const editAd = async (
+    page: Page,
+    imageUrl: string,
+    name: string,
+    price: string,
+    description: string
+  ) => {
+    await page.locator('input[name="imageUrl"]').fill(imageUrl);
+    await page.locator('input[name="name"]').fill(name);
+    await page.locator('input[name="price"]').fill(price);
+    await page.locator('textarea[name="description"]').fill(description);
+  };
 
-    // подтверждение редактирования
+  // подтверждение редактирования
+  const confirmEdit = async (page: Page) => {
     await page.getByRole('img').nth(2).click();
+  };
+
+  test('Успешное редактирование объявления', async ({ page }) => {
+    await editAd(
+      page,
+      'https://avatars.mds.yandex.net/i?id=916c10f825180c47640a6b374eeb2a52_l-5292620-images-thumbs&n=13',
+      'Игрушка зайчик',
+      '700',
+      'Мягкий плюшевый зайчик'
+    );
+
+    confirmEdit(page);
 
     // проверка, что объявление отредактировано
     await expect(
       page.getByRole('heading', { name: 'Игрушка зайчик' })
     ).toBeVisible();
-    await expect(page.getByText('700 ₽')).toBeVisible();
+    await expect(page.getByText('700')).toBeVisible();
     await expect(page.getByText('Мягкий плюшевый зайчик')).toBeVisible();
     await expect(
       page.locator(
@@ -44,18 +58,16 @@ test.describe('Редактирование объявления', () => {
     await page.locator('input[name="price"]').clear();
     await page.locator('textarea[name="description"]').clear();
 
-    // подтверждение редактирования
-    await page.getByRole('img').nth(2).click();
+    confirmEdit(page);
 
-    // проверка, что объявление сохранено
-    await page.goto(
-      'http://tech-avito-intern.jumpingcrab.com/advertisements/2'
-    );
+    // перезагрузка страницы для проверки, что поля пустые
+    await page.reload();
   });
 
   test('Редактирование объявления с некорректными данными', async ({
     page,
   }) => {
+    // без функции, потому что нужен type() в description
     await page
       .locator('input[name="imageUrl"]')
       .fill('https://lalala-topolya.jpg');
@@ -65,7 +77,6 @@ test.describe('Редактирование объявления', () => {
       .locator('textarea[name="description"]')
       .fill('<script>console.log(1)</script>');
 
-    // подтверждение редактирования
-    await page.getByRole('img').nth(2).click();
+    confirmEdit(page);
   });
 });

@@ -1,57 +1,54 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('Поиск объявлений', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://tech-avito-intern.jumpingcrab.com/');
   });
 
+  // ф-ия поиска и проверки результата
+  const searchAndCheck = async (
+    page: Page,
+    searchQuery: string,
+    expectedResult: string
+  ) => {
+    const searchBox = page.getByRole('textbox', {
+      name: 'Поиск по объявлениям',
+    });
+    await searchBox.fill(searchQuery);
+    await expect(page.getByText(expectedResult)).toBeVisible();
+  };
+
   test('Поиск по полному названию', async ({ page }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('кен');
-    await expect(page.getByText('Кен')).toBeVisible();
+    await searchAndCheck(page, 'кен', 'Кен');
   });
 
   test('Поиск по названию с капслоком', async ({ page }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('кен');
-    await expect(page.getByText('КЕН')).toBeVisible();
+    await searchAndCheck(page, 'КЕН', 'Кен');
   });
 
   test('Поиск по части названия', async ({ page }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('кен');
-    await expect(page.getByText('ке')).toBeVisible();
+    await searchAndCheck(page, 'ке', 'Кен');
   });
 
   test('Поиск с пробелами с обеих сторон', async ({ page }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('кен');
-    await expect(page.getByText('  кен  ')).toBeVisible();
+    await searchAndCheck(page, '  кен  ', 'Кен');
   });
 
   test('Очистка поля поиска и проверка обновления списка объявлений', async ({
     page,
   }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('кен');
-    await expect(
-      page.getByRole('textbox', { name: 'Поиск по объявлениям' })
-    ).toHaveValue('кен');
-    await page.getByRole('textbox', { name: 'Поиск по объявлениям' }).fill('');
-    await expect(
-      page.getByRole('textbox', { name: 'Поиск по объявлениям' })
-    ).toHaveValue('');
+    const searchBox = page.getByRole('textbox', {
+      name: 'Поиск по объявлениям',
+    });
+    await searchBox.fill('кен');
+    await expect(searchBox).toHaveValue('кен');
+
+    // удаление значения из поля поиска и проверка, что пусто
+    await searchBox.fill('');
+    await expect(searchBox).toHaveValue('');
   });
 
   test('Поиск несуществующего объявления', async ({ page }) => {
-    await page
-      .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('Барби 3000');
-    await expect(page.getByText('Барби 3000')).toBeVisible();
+    await searchAndCheck(page, 'Барби 3000', 'Найдено: 0');
   });
 });
