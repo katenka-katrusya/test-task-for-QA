@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('Создание объявления', () => {
   test.beforeEach(async ({ page }) => {
@@ -6,26 +6,43 @@ test.describe('Создание объявления', () => {
     await page.getByRole('button', { name: 'Создать' }).click();
   });
 
-  test('Успешное создание объявления', async ({ page }) => {
-    // заполнение формы
-    await page.getByRole('textbox', { name: 'Название' }).fill('Игрушка мишка');
-    await page.getByRole('spinbutton', { name: 'Цена' }).fill('500');
-    await page
-      .getByRole('textbox', { name: 'Описание' })
-      .fill('Плюшевый медведь');
+  // ф-ия создания объявления (заполнение всех полей)
+  const fillAdForm = async (
+    page: Page,
+    name: string,
+    price: string,
+    description: string,
+    imageUrl: string
+  ) => {
+    await page.getByRole('textbox', { name: 'Название' }).fill(name);
+    await page.getByRole('spinbutton', { name: 'Цена' }).fill(price);
+    await page.getByRole('textbox', { name: 'Описание' }).fill(description);
     await page
       .getByRole('textbox', { name: 'Ссылка на изображение' })
-      .fill(
-        'https://cdn.culture.ru/images/70e8e01f-d33f-52d8-8f7b-9a923040e618'
-      );
+      .fill(imageUrl);
+  };
+
+  // сохранение объявления
+  const confirmSave = async (page: Page) => {
+    await page.getByRole('button', { name: 'Сохранить' }).click();
+  };
+
+  test('Успешное создание объявления', async ({ page }) => {
+    await fillAdForm(
+      page,
+      'Игрушка мишка',
+      '500',
+      'Плюшевый медведь',
+      'https://cdn.culture.ru/images/70e8e01f-d33f-52d8-8f7b-9a923040e618'
+    );
+
     await expect(
       page.locator(
         'img[src="https://cdn.culture.ru/images/70e8e01f-d33f-52d8-8f7b-9a923040e618"]'
       )
     ).toBeVisible();
 
-    // сохранение объявления
-    await page.getByRole('button', { name: 'Сохранить' }).click();
+    await confirmSave(page);
 
     // проверка, что объявление создано. Для этого сначала поиск по названию и выбор самого первого
     await page
@@ -35,16 +52,10 @@ test.describe('Создание объявления', () => {
   });
 
   test('Создание объявления с пустыми полями', async ({ page }) => {
-    // поля должны быть пустыми
-    await expect(page.getByRole('textbox', { name: 'Название' })).toBeEmpty();
-    await expect(page.getByRole('spinbutton', { name: 'Цена' })).toBeEmpty();
-    await expect(page.getByRole('textbox', { name: 'Описание' })).toBeEmpty();
-    await expect(
-      page.getByRole('textbox', { name: 'Ссылка на изображение' })
-    ).toBeEmpty();
+    // поля ничем не заполнять
+    await fillAdForm(page, '', '', '', '');
 
-    // сохранение объявления
-    await page.getByRole('button', { name: 'Сохранить' }).click();
+    await confirmSave(page);
 
     // проверка на ошибки валидации. Рядом с нужным инпутом должен появиться текст ошибки
     await expect(
@@ -63,15 +74,9 @@ test.describe('Создание объявления', () => {
 
   test('Создание объявления с некорректными данными', async ({ page }) => {
     // заполнение формы
-    await page.getByRole('textbox', { name: 'Название' }).fill('M'.repeat(300)); // 300 символов без пробелов
-    await page.getByRole('spinbutton', { name: 'Цена' }).fill('-500');
-    await page.getByRole('textbox', { name: 'Описание' }).fill('   '); // Только пробелы
-    await page
-      .getByRole('textbox', { name: 'Ссылка на изображение' })
-      .fill('abcd');
+    await fillAdForm(page, 'L'.repeat(300), '-500', '   ', 'abcd');
 
-    // сохранение объявления
-    await page.getByRole('button', { name: 'Сохранить' }).click();
+    await confirmSave(page);
 
     // проверка на ошибки валидации. Есть ошибка только о пустом поле, остальные неизвестны, поэтому проверям просто наличие элемента с классом ошибки
     await expect
@@ -87,11 +92,11 @@ test.describe('Создание объявления', () => {
       .soft(page.locator('[name="imageUrl"] + .chakra-form__error-message'))
       .toBeVisible();
 
-    // проверка, что объявление НЕ создано.Если хоть 1 объявление совпадёт, значит создалось
+    // проверка, что объявление НЕ создано, то есть их 0.
     await page
       .getByRole('textbox', { name: 'Поиск по объявлениям' })
-      .fill('MMMMMMMMMMMMMMMMMMMM');
+      .fill('LLLLLLLLLLLLLLLLLLLL');
     await page.waitForTimeout(3000); // ждём пока прогрузится выдача
-    await expect(page.getByText('MMMMMMMMMMMMMMMMMMMM')).toHaveCount(0);
+    await expect(page.getByText('LLLLLLLLLLLLLLLLLLLL')).toHaveCount(0);
   });
 });

@@ -37,7 +37,7 @@ test.describe('Редактирование объявления', () => {
       'Мягкий плюшевый зайчик'
     );
 
-    confirmEdit(page);
+    await confirmEdit(page);
 
     // проверка, что объявление отредактировано
     await expect(
@@ -58,7 +58,7 @@ test.describe('Редактирование объявления', () => {
     await page.locator('input[name="price"]').clear();
     await page.locator('textarea[name="description"]').clear();
 
-    confirmEdit(page);
+    await confirmEdit(page);
 
     // перезагрузка страницы для проверки, что поля пустые
     await page.reload();
@@ -77,6 +77,6 @@ test.describe('Редактирование объявления', () => {
       .locator('textarea[name="description"]')
       .fill('<script>console.log(1)</script>');
 
-    confirmEdit(page);
+    await confirmEdit(page);
   });
 });
